@@ -3,16 +3,14 @@ package models
 import (
 	"fmt"
 	"gonum.org/v1/gonum/mat"
-	"log"
 	"math"
-	"os"
 )
 
 type TfIdfModel struct {
 	df    map[string]map[int]bool
 	tf    map[int]map[string]float64
 	idf   map[string]float64
-	tfidf map[int]map[string]float64
+	Tfidf map[int]map[string]float64
 }
 
 func NewTfIdf() *TfIdfModel {
@@ -20,22 +18,8 @@ func NewTfIdf() *TfIdfModel {
 		df:    make(map[string]map[int]bool),
 		tf:    make(map[int]map[string]float64),
 		idf:   make(map[string]float64),
-		tfidf: make(map[int]map[string]float64),
+		Tfidf: make(map[int]map[string]float64),
 	}
-}
-
-func Build(fname string) {
-	c := CountVectorizer{}
-	m := NewTfIdf()
-	i := DataIngestor{}
-
-	f, err := os.Open(fname)
-	if err != nil {
-		log.Fatalf("%s", err)
-	}
-
-	done := m.Fit(c.Fit(i.Ingest(f)))
-	<-done
 }
 
 type DocTermData struct {
@@ -52,11 +36,11 @@ func (m *TfIdfModel) Fit(inCh <-chan DocTermData) <-chan struct{} {
 		defer func() {
 			for docId, wfs := range m.tf {
 				for w, _ := range wfs {
-					if _, exists := m.tfidf[docId]; !exists {
-						m.tfidf[docId] = map[string]float64{}
+					if _, exists := m.Tfidf[docId]; !exists {
+						m.Tfidf[docId] = map[string]float64{}
 					}
-					fmt.Printf("TF*IDF >>>: m.tfidf[%d][%s] = m.tf[%d][%s] * m.idf[%s] =%.3f\n", docId, w, docId, w, w, m.tf[docId][w]*m.idf[w])
-					m.tfidf[docId][w] = m.tf[docId][w] * m.idf[w]
+					fmt.Printf("TF*IDF >>>: m.Tfidf[%d][%s] = m.tf[%d][%s] * m.idf[%s] =%.3f\n", docId, w, docId, w, w, m.tf[docId][w]*m.idf[w])
+					m.Tfidf[docId][w] = m.tf[docId][w] * m.idf[w]
 				}
 			}
 			done <- struct{}{}
@@ -78,7 +62,7 @@ func (m *TfIdfModel) Fit(inCh <-chan DocTermData) <-chan struct{} {
 
 			for w, docs := range m.df {
 				dtf := len(docs)
-				m.idf[w] = math.Log10(float64(maxDocs) / float64(dtf))
+				m.idf[w] = math.Log(float64(maxDocs+1)/float64(dtf+1)) + 1
 				fmt.Printf("m.idf[%s] = math.Log(float64(%d / %d)) =%.3f \n", w, maxDocs, dtf, m.idf[w])
 			}
 		}
@@ -86,12 +70,14 @@ func (m *TfIdfModel) Fit(inCh <-chan DocTermData) <-chan struct{} {
 	return done
 }
 
-func (c *TfIdfModel) Vector(id int, index map[string]int) *mat.Dense {
+func (c *TfIdfModel) Vector(id int, index map[string]int) mat.Vector {
 	data := make([]float64, len(index))
-	for w, tf := range c.tfidf[id] {
+	for w, tf := range c.Tfidf[id] {
 		i := index[w]
 		data[i] = tf
+		//fmt.Println(" Palabra en vector ", w, " En indice ", index[w])
 	}
-	matrix := mat.NewDense(1, len(c.tf[id]), data)
+	matrix := mat.NewVecDense(len(index), data)
+	//fmt.Printf("%v.2f\n", matrix)
 	return matrix
 }

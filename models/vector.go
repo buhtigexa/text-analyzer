@@ -5,7 +5,7 @@ import (
 	"math"
 )
 
-func cosine(a, b mat.Vector) float64 {
+func CosineSimilarity(a, b mat.Vector) float64 {
 	if a.Len() != b.Len() {
 		panic("Vectors have different lengths")
 	}
@@ -18,5 +18,5 @@ func cosine(a, b mat.Vector) float64 {
 		normA += ai * ai
 		normB += bi * bi
 	}
-	return dot / math.Sqrt(normA) * math.Sqrt(normB)
+	return dot / (math.Sqrt(normA) * math.Sqrt(normB))
 }

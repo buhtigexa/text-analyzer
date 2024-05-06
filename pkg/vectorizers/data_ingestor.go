@@ -1,4 +1,4 @@
-package models
+package vectorizers
 
 import (
 	"bufio"
@@ -15,10 +15,11 @@ func NewDataIngestor() *DataIngestor {
 	return &DataIngestor{
 		Index: make(map[string]int),
 	}
+
 }
 
-func (m *DataIngestor) Ingest(r io.ReadCloser) <-chan DocTermData {
-	out := make(chan DocTermData)
+func (di *DataIngestor) Ingest(r io.ReadCloser) <-chan interface{} {
+	out := make(chan interface{})
 	scanner := bufio.NewScanner(r)
 	go func() {
 		defer func() {
@@ -31,15 +32,15 @@ func (m *DataIngestor) Ingest(r io.ReadCloser) <-chan DocTermData {
 			words := strings.Fields(scanner.Text())
 			for _, term := range words {
 				out <- DocTermData{term: strings.Trim(term, " "), docId: docId, count: len(words)}
-				if _, ok := m.Index[term]; !ok {
-					m.Index[term] = wordIndex
+				if _, ok := di.Index[term]; !ok {
+					di.Index[term] = wordIndex
 					wordIndex++
 				}
 			}
 			docId++
 		}
 		if err := scanner.Err(); err != nil {
-			log.Fatalf("reading from file error: %s", err)
+			log.Printf("reading from file error: %s", err)
 		}
 	}()
 	return out

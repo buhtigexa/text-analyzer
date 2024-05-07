@@ -5,8 +5,8 @@ import (
 	"gonum.org/v1/gonum/mat"
 	"log"
 	"os"
+	"semanticAnalysis/internal/vectorizers"
 	"semanticAnalysis/models"
-	"semanticAnalysis/pkg/vectorizers"
 )
 
 func prettyPrintMatrix(m mat.Matrix) {

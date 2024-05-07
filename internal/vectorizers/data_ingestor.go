@@ -23,7 +23,7 @@ func (di *DataIngestor) Ingest(r io.ReadCloser) <-chan interface{} {
 	scanner := bufio.NewScanner(r)
 	go func() {
 		defer func() {
-			r.Close()
+			_ = r.Close()
 			close(out)
 		}()
 		docId := 1
